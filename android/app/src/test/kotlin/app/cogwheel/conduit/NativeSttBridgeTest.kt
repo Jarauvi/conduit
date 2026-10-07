@@ -94,6 +94,39 @@ class NativeSttBridgeTest {
     }
 
     @Test
+    fun detachingEventsDoesNotStopRecognition() {
+        val shadow = Shadow.extract<ShadowSpeechRecognizer>(start("en-IN"))
+
+        bridge.onMethodCall(MethodCall("detachEvents", null), IgnoreResult())
+        bridge.onCancel(null)
+        ShadowLooper.idleMainLooper()
+
+        assertFalse(shadow.isDestroyed)
+
+        shadow.triggerOnPartialResults(Bundle().apply {
+            putStringArrayList(
+                SpeechRecognizer.RESULTS_RECOGNITION,
+                arrayListOf("hello")
+            )
+        })
+
+        assertEquals(
+            "hello",
+            events.last { it["type"] == "result" }["text"]
+        )
+    }
+
+    @Test
+    fun cancellingEventsNormallyStopsRecognition() {
+        val shadow = Shadow.extract<ShadowSpeechRecognizer>(start("en-IN"))
+
+        bridge.onCancel(null)
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(shadow.isDestroyed)
+    }
+
+    @Test
     @Config(sdk = [34])
     fun unsupportedLanguageRetriesAreBounded() {
         val support = RecognitionSupport.Builder()
@@ -193,4 +226,6 @@ class NativeSttBridgeTest {
         }
         override fun notImplemented() { throw AssertionError("Method was not implemented") }
     }
+
+
 }

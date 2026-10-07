@@ -257,6 +257,15 @@ class NativeSttService {
   /// immediate native response-wait ownership transfer.
   Future<void> detachListeningEvents() async {
     _eventsDetachedWithoutStop = true;
+
+    try {
+      await _methodChannel.invokeMethod<void>('detachEvents');
+    } on MissingPluginException {
+      // Ignore; the bridge is optional and only present on mobile targets.
+    } on PlatformException {
+      // Best effort; the EventChannel will still be detached below.
+    }
+
     await _closeEventDelivery();
   }
 

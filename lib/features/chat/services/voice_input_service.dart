@@ -817,8 +817,8 @@ class VoiceInputService implements VoiceModeInput {
           _currentText.trim().isNotEmpty && _receivedFinalResult;
       final nativeSubscription = _nativeSttSub;
       _nativeSttSub = null;
-      await nativeSubscription?.cancel();
       await _nativeStt.detachListeningEvents();
+      await nativeSubscription?.cancel();
       _nativeCaptureDetachedForResponseWait = true;
       await _closeControllers();
       return false;

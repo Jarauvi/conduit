@@ -57,6 +57,7 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
     private var platformCommittedText = ""
     @Volatile
     private var recognitionGeneration = 0
+    private var detachEventsWithoutStop = false
 
     fun setup(flutterEngine: FlutterEngine) {
         MethodChannel(
@@ -90,6 +91,7 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
                 val emitPartialResults = call.argument<Boolean>("emitPartialResults") ?: true
                 val accumulateResults = call.argument<Boolean>("accumulateResults") ?: true
                 val allowOnlineFallback = call.argument<Boolean>("allowOnlineFallback") ?: true
+                
                 scope.launch {
                     start(
                         localeId,
@@ -101,11 +103,17 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
                 }
             }
             "stop" -> {
+                detachEventsWithoutStop = false
                 scope.launch {
                     recognitionGeneration += 1
                     stopInternal(emitDone = false, awaitCompletion = true)
                     result.success(null)
                 }
+            }
+            "detachEvents" -> {
+                detachEventsWithoutStop = true
+                eventSink = null
+                result.success(null)
             }
             else -> result.notImplemented()
         }
@@ -117,6 +125,12 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
 
     override fun onCancel(arguments: Any?) {
         eventSink = null
+
+        if (detachEventsWithoutStop) {
+            detachEventsWithoutStop = false
+            return
+        }
+
         recognitionGeneration += 1
         scope.launch {
             stopInternal(emitDone = false, awaitCompletion = false)
@@ -194,6 +208,9 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
         allowOnlineFallback: Boolean,
         result: MethodChannel.Result
     ) {
+        detachEventsWithoutStop = false
+        val generation = recognitionGeneration + 1
+
         val generation = recognitionGeneration + 1
         recognitionGeneration = generation
         stopInternal(emitDone = false, awaitCompletion = false)
