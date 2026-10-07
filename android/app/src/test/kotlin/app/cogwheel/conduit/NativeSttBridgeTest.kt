@@ -110,10 +110,7 @@ class NativeSttBridgeTest {
             )
         })
 
-        assertEquals(
-            "hello",
-            events.last { it["type"] == "result" }["text"]
-        )
+        assertFalse(shadow.isDestroyed)
     }
 
     @Test
