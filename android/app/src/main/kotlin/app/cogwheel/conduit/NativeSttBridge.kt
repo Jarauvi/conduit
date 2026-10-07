@@ -209,7 +209,6 @@ class NativeSttBridge(private val activity: MainActivity) : MethodChannel.Method
         result: MethodChannel.Result
     ) {
         detachEventsWithoutStop = false
-        val generation = recognitionGeneration + 1
 
         val generation = recognitionGeneration + 1
         recognitionGeneration = generation
